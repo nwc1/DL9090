@@ -1,0 +1,125 @@
+# Q4 - Regression Analysis - California
+from google.colab import files
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+
+# Upload the dataset
+#uploaded = files.upload()
+
+# Load the dataset
+df = pd.read_csv('/content/sample_data/california_housing_train.csv')
+
+# Display the first few rows of the dataframe
+print(df.head())
+
+# Drop rows with missing values in 'median_house_value'
+df = df.dropna(subset=['median_house_value'])
+
+# Convert 'median_house_value' to thousands
+df['median_house_value'] = df['median_house_value'] / 1000
+
+# Define features and target
+X = df.drop('median_house_value', axis=1)
+y = df['median_house_value']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the feature data
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Define and compile the model without dropout
+model_no_dropout = Sequential([
+    Dense(64, activation='relu', input_shape=(X_train_scaled.shape[1],)),
+    Dense(32, activation='relu'),
+    Dense(1)
+])
+
+model_no_dropout.compile(optimizer='adam', loss='mean_squared_error')
+
+# Train the model without dropout
+history_no_dropout = model_no_dropout.fit(
+    X_train_scaled, y_train,
+    batch_size=128,
+    epochs=50,
+    verbose=1,
+    validation_split=0.2
+)
+
+# Evaluate the model without dropout
+mse_no_dropout = model_no_dropout.evaluate(X_test_scaled, y_test, verbose=0)
+print(f'\nMean Squared Error (No Dropout) on test data: {mse_no_dropout:.2f}')
+
+# Make predictions with the model without dropout
+predictions_no_dropout = model_no_dropout.predict(X_test_scaled)
+print("First few predictions (No Dropout):")
+print(predictions_no_dropout[:5])
+
+# Define and compile the model with dropout
+model_with_dropout = Sequential([
+    Dense(64, activation='relu', input_shape=(X_train_scaled.shape[1],)),
+    Dropout(0.3),  # Dropout layer with a rate of 30%
+    Dense(32, activation='relu'),
+    Dropout(0.3),  # Dropout layer with a rate of 30%
+    Dense(1)
+])
+
+model_with_dropout.compile(optimizer='adam', loss='mean_squared_error')
+
+# Train the model with dropout
+history_with_dropout = model_with_dropout.fit(
+    X_train_scaled, y_train,
+    batch_size=128,
+    epochs=50,
+    verbose=1,
+    validation_split=0.2
+)
+
+# Evaluate the model with dropout
+mse_with_dropout = model_with_dropout.evaluate(X_test_scaled, y_test, verbose=0)
+print(f'\nMean Squared Error (With Dropout) on test data: {mse_with_dropout:.2f}')
+
+# Make predictions with the model with dropout
+predictions_with_dropout = model_with_dropout.predict(X_test_scaled)
+print("First few predictions (With Dropout):")
+print(predictions_with_dropout[:5])
+
+# Plot training loss for both models
+plt.figure(figsize=(12, 10))
+
+# Plot for model without dropout
+plt.subplot(2, 1, 1)
+plt.plot(history_no_dropout.history['loss'], label='Training Loss (No Dropout)')
+plt.plot(history_no_dropout.history['val_loss'], label='Validation Loss (No Dropout)')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Model Loss (No Dropout)')
+plt.legend()
+
+# Plot for model with dropout
+plt.subplot(2, 1, 2)
+plt.plot(history_with_dropout.history['loss'], label='Training Loss (With Dropout)')
+plt.plot(history_with_dropout.history['val_loss'], label='Validation Loss (With Dropout)')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Model Loss (With Dropout)')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+# Display model summaries
+print("\nModel Summary (No Dropout):")
+model_no_dropout.summary()
+
+print("\nModel Summary (With Dropout):")
+model_with_dropout.summary()

@@ -1,0 +1,25 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the softmax activation function
+def softmax_activation(x):
+    e_x = np.exp(x - np.max(x))  # Subtract max(x) for numerical stability
+    return e_x / e_x.sum(axis=0)
+
+# Generate a range of input values
+x = np.linspace(-2, 2, 100)
+# Create a matrix where each row is a different input vector for softmax
+X = np.vstack([x, np.zeros_like(x), np.zeros_like(x)])  # Adding 3 different "classes" for visualization
+
+# Apply the softmax activation function
+y = softmax_activation(X)
+
+plt.plot(x, y[0, :], label='Class 1', color='r')
+plt.plot(x, y[1, :], label='Class 2', color='g')
+
+plt.title('Softmax Activation Function')
+plt.xlabel('Input (x)')
+plt.ylabel('Probability')
+plt.legend()
+plt.grid(True)
+plt.show()

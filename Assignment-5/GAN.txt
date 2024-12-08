@@ -1,0 +1,121 @@
+ import tensorflow as tf
+from tensorflow.keras import layers
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load and preprocess MNIST dataset (using a smaller subset for faster testing)
+def load_data():
+    (x_train, _), (_, _) = tf.keras.datasets.mnist.load_data()
+    x_train = x_train[:10000]  # Use only 10,000 samples for faster testing
+    x_train = x_train.astype('float32') / 255.0
+    x_train = np.expand_dims(x_train, axis=-1)  # Add channel dimension
+    return x_train
+
+# Simplified Generator model
+def build_generator():
+    model = tf.keras.Sequential([
+        layers.Input(shape=(100,)),  # Explicit Input Layer
+        layers.Dense(7 * 7 * 128, use_bias=False),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(),
+
+        layers.Reshape((7, 7, 128)),
+
+        layers.Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(),
+
+        layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh')
+    ])
+    return model
+
+# Simplified Discriminator model
+def build_discriminator():
+    model = tf.keras.Sequential([
+        layers.Input(shape=(28, 28, 1)),  # Explicit Input Layer
+        layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same'),
+        layers.LeakyReLU(),
+        layers.Dropout(0.3),
+
+        layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'),
+        layers.LeakyReLU(),
+        layers.Dropout(0.3),
+
+        layers.Flatten(),
+        layers.Dense(1)
+    ])
+    return model
+
+# Loss function
+cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+
+def generator_loss(fake_output):
+    return cross_entropy(tf.ones_like(fake_output), fake_output)
+
+def discriminator_loss(real_output, fake_output):
+    real_loss = cross_entropy(tf.ones_like(real_output), real_output)
+    fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
+    return real_loss + fake_loss
+
+# Optimizers
+generator_optimizer = tf.keras.optimizers.Adam(1e-4)
+discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
+
+# Training the DCGAN
+def train_step(generator, discriminator, images, batch_size=64):  # Reduced batch size
+    noise = tf.random.normal([batch_size, 100])
+
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+        generated_images = generator(noise, training=True)
+
+        real_output = discriminator(images, training=True)
+        fake_output = discriminator(generated_images, training=True)
+
+        gen_loss = generator_loss(fake_output)
+        disc_loss = discriminator_loss(real_output, fake_output)
+
+    gradients_of_generator = gen_tape.gradient(gen_loss, generator.trainable_variables)
+    gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
+
+    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
+    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+
+    return gen_loss, disc_loss
+
+def train(generator, discriminator, dataset, epochs=10, batch_size=64):  # Reduced epochs and batch size
+    for epoch in range(epochs):
+        for step, image_batch in enumerate(dataset):
+            gen_loss, disc_loss = train_step(generator, discriminator, image_batch, batch_size)
+
+            if step % 100 == 0:  # Display progress every 100 batches
+                print(f'Epoch {epoch + 1}, Step {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}')
+
+        # Generate and save images at the end of each epoch
+        generate_and_save_images(generator, epoch + 1)
+
+# Function to generate and save images
+def generate_and_save_images(model, epoch, test_input=None):
+    if test_input is None:
+        test_input = tf.random.normal([16, 100])
+    predictions = model(test_input, training=False)
+
+    fig = plt.figure(figsize=(4, 4))
+    for i in range(predictions.shape[0]):
+        plt.subplot(4, 4, i + 1)
+        plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+        plt.axis('off')
+    plt.savefig(f'image_at_epoch_{epoch:04d}.png')
+    plt.show()
+
+# Main function
+if __name__ == '__main__':
+    BUFFER_SIZE = 10000  # Reduced buffer size due to reduced dataset
+    BATCH_SIZE = 64  # Reduced batch size for faster training
+
+    x_train = load_data()
+    train_dataset = tf.data.Dataset.from_tensor_slices(x_train).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+
+    generator = build_generator()
+    discriminator = build_discriminator()
+
+    train(generator, discriminator, train_dataset, epochs=10)  # Reduced epochs

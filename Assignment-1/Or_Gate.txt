@@ -1,0 +1,38 @@
+# OR Gate Using Perceptron
+
+def activation(out,threshold):
+    if out >= threshold:
+        return 1
+    else:
+        return 0
+
+def perceptron():
+    a = [0,0,1,1]
+    b = [0,1,0,1]
+    actual = [0,1,1,1] # Actual Output
+    weight = [0.6,0.6]
+    threshold = 1
+    learning_rate = 0.5
+    i=0
+    print("Perceptron Training : \n")
+    print("----------------")
+    while i<4:
+        summation = a[i]*weight[0] + b[i]*weight[1]
+        predicted = activation(summation,threshold)
+        print("Input : " + str(a[i]) +" , "+ str(b[i]))
+        print("Weights : " + str(weight[0]) +" , "+ str(weight[1]))
+        print("summation : "+str(summation) + " threshold : "+str(threshold) )
+        print("Actual Output : "+str(actual[i])+" Predicated Output : "+str(predicted))
+        if(predicted!=actual[i]):
+            # w = w + learning_rate(actual_output - predicated_output)*input
+            print("\n\n###################################\n")
+            print("Updating Weights...")
+            weight[0]=weight[0]+learning_rate*(actual[i]-predicted)*a[i]
+            weight[1]=weight[1]+learning_rate*(actual[i]-predicted)*b[i]
+            print("Updated Weights : " + str(weight[0]) +" , "+ str(weight[1]))
+            i = -1
+            print("\n###################################\n\n")
+        i=i+1
+        print("------------------")
+
+perceptron()

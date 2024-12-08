@@ -1,0 +1,70 @@
+# Q3 - Handwritten Digit
+
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Flatten
+from tensorflow.keras.layers import Conv2D, MaxPooling2D
+
+# Load and preprocess data
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+# Reshape data for CNN (28x28 images with 1 channel)
+x_train = x_train.reshape(x_train.shape[0], 28, 28, 1).astype('float32') / 255
+x_test = x_test.reshape(x_test.shape[0], 28, 28, 1).astype('float32') / 255
+
+# Model 1: 1 Flatten layer and 2 Dense layers with ReLU activation
+model1 = Sequential([
+    Flatten(input_shape=(28, 28, 1)),
+    Dense(128, activation='relu'),
+    Dense(64, activation='relu'),
+
+])
+
+model1.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+history1 = model1.fit(x_train, y_train, batch_size=128, epochs=10, verbose=1, validation_split=0.2)
+
+# Evaluate Model 1
+test_loss1, test_acc1 = model1.evaluate(x_test, y_test, verbose=0)
+print(f'Model 1 Test accuracy: {test_acc1:.2f}')
+
+# Model 2: 1 Flatten layer and 3 Dense layers with ReLU activation
+model2 = Sequential([
+    Flatten(input_shape=(28, 28, 1)),
+    Dense(128, activation='relu'),
+    Dense(64, activation='relu'),
+    Dense(10, activation='softmax')
+])
+
+model2.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+history2 = model2.fit(x_train, y_train, batch_size=128, epochs=25, verbose=1, validation_split=0.2)
+
+# Evaluate Model 2
+test_loss2, test_acc2 = model2.evaluate(x_test, y_test, verbose=0)
+print(f'Model 2 Test accuracy: {test_acc2:.2f}')
+
+# Optional: Plot training history for both models
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(12, 5))
+
+# Plot Model 1 training history
+plt.subplot(1, 2, 1)
+plt.plot(history1.history['accuracy'], label='Train Accuracy')
+plt.plot(history1.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Model 1 Accuracy')
+plt.legend()
+
+# Plot Model 2 training history
+plt.subplot(1, 2, 2)
+plt.plot(history2.history['accuracy'], label='Train Accuracy')
+plt.plot(history2.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Model 2 Accuracy')
+plt.legend()
+
+plt.tight_layout()
+plt.show()

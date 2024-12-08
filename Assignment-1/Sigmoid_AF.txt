@@ -1,0 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the sigmoid activation function
+def sigmoid_activation(x):
+    return 1 / (1 + np.exp(-x))
+
+# Generate a range of input values
+x = np.linspace(-10, 10, 400)
+
+# Apply the sigmoid activation function
+y = sigmoid_activation(x)
+
+plt.plot(x, y, label='Sigmoid Activation Function', color='r')
+plt.title('Sigmoid Activation Function')
+plt.xlabel('Input (x)')
+plt.ylabel('Output (f(x))')
+plt.grid(True)
+plt.legend()
+plt.show()

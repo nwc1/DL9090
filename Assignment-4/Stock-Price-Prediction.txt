@@ -1,0 +1,112 @@
+# Import libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM, GRU
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+# Load data from CSV file
+data = pd.read_csv('/content/sample_data/Mastercard_stock_history.csv')
+
+# Select relevant column (e.g., 'Close')
+data = data[['Close']]
+
+# Scale data using Min-Max Scaler
+scaler = MinMaxScaler(feature_range=(0, 1))
+data['Close'] = scaler.fit_transform(data[['Close']])
+
+# Check total data points
+print("Total data points:", len(data))
+
+# Split data into training and testing sets
+train_size = int(len(data) * 0.8)
+train_data, test_data = data[0:train_size], data[train_size:len(data)]
+
+# Check sizes after split
+print("Train data size:", len(train_data))
+print("Test data size:", len(test_data))
+
+# Create input-output pairs
+def create_xy(data, time_step=1):
+    X, y = [], []
+    for i in range(len(data) - time_step):
+        a = data['Close'].values[i:(i + time_step)]
+        X.append(a)
+        y.append(data['Close'].values[i + time_step])
+    return np.array(X), np.array(y)
+
+# Creating train/test datasets
+time_step = 100
+X_train, y_train = create_xy(train_data, time_step)
+X_test, y_test = create_xy(test_data, time_step)
+
+# Reshape input data for LSTM and GRU models
+X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+
+# Reshape y_train and y_test
+y_train = y_train.reshape(-1, 1)
+y_test = y_test.reshape(-1, 1)
+
+# LSTM Model
+model_lstm = Sequential()
+model_lstm.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
+model_lstm.add(LSTM(units=50))
+model_lstm.add(Dense(1))
+model_lstm.compile(optimizer='adam', loss='mean_squared_error')
+
+# GRU Model
+model_gru = Sequential()
+model_gru.add(GRU(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
+model_gru.add(GRU(units=50))
+model_gru.add(Dense(1))
+model_gru.compile(optimizer='adam', loss='mean_squared_error')
+
+# Train LSTM model
+model_lstm.fit(X_train, y_train, epochs=1, batch_size=32, verbose=2)
+
+# Train GRU model
+model_gru.fit(X_train, y_train, epochs=1, batch_size=32, verbose=2)
+
+# Make predictions using LSTM model
+train_predict_lstm = model_lstm.predict(X_train)
+test_predict_lstm = model_lstm.predict(X_test)
+
+# Make predictions using GRU model
+train_predict_gru = model_gru.predict(X_train)
+test_predict_gru = model_gru.predict(X_test)
+
+# Inverse transform predictions
+train_predict_lstm = scaler.inverse_transform(train_predict_lstm)
+test_predict_lstm = scaler.inverse_transform(test_predict_lstm)
+train_predict_gru = scaler.inverse_transform(train_predict_gru)
+test_predict_gru = scaler.inverse_transform(test_predict_gru)
+
+# Calculate Mean Squared Error (MSE)
+lstm_train_mse = mean_squared_error(scaler.inverse_transform(y_train), train_predict_lstm)
+lstm_test_mse = mean_squared_error(scaler.inverse_transform(y_test), test_predict_lstm)
+gru_train_mse = mean_squared_error(scaler.inverse_transform(y_train), train_predict_gru)
+gru_test_mse = mean_squared_error(scaler.inverse_transform(y_test), test_predict_gru)
+
+print("LSTM Train MSE: ", lstm_train_mse)
+print("LSTM Test MSE: ", lstm_test_mse)
+print("GRU Train MSE: ", gru_train_mse)
+print("GRU Test MSE: ", gru_test_mse)
+
+# Plot results for training data
+plt.figure(figsize=(10, 6))
+plt.plot(scaler.inverse_transform(y_train), color='blue', label='Actual Price')
+plt.plot(train_predict_lstm, color='green', label='LSTM Prediction')
+plt.plot(train_predict_gru, color='red', label='GRU Prediction')
+plt.title('Training Data')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+
+# Plot results for testing data
+plt.figure(figsize=(10, 6))
+plt.plot(scaler.inverse_transform(y_test), color='blue', label='Actual Price')

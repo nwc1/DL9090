@@ -1,0 +1,89 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM, Dropout
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+# Load data
+df = pd.read_csv('/content/sample_data/monthly_milk_production.csv', index_col='Date', parse_dates=['Date'])
+
+# Scale production
+scaler = MinMaxScaler()
+df[['Production']] = scaler.fit_transform(df[['Production']])
+
+# Plot original data
+plt.figure(figsize=(10,6))
+plt.plot(df['Production'])
+plt.title('Monthly Milk Production')
+plt.xlabel('Date')
+plt.ylabel('Production')
+plt.show()
+
+# Prepare data
+train_size = int(len(df) * 0.8)
+train_data, test_data = df[0:train_size], df[train_size:len(df)]
+
+# Function to create sequences
+def create_sequences(data, seq_len):
+    X, y = [], []
+    for i in range(len(data) - seq_len):
+        X.append(data['Production'].values[i:i+seq_len])
+        y.append(data['Production'].values[i+seq_len])
+    return np.array(X), np.array(y)
+
+# Create sequences
+seq_len = 12
+X_train, y_train = create_sequences(train_data, seq_len)
+
+# Create test sequences starting from the last train sequence
+X_test, y_test = create_sequences(pd.concat([train_data, test_data]), seq_len)
+X_test = X_test[-len(test_data):]
+y_test = y_test[-len(test_data):]
+
+# Reshape data for LSTM
+X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+
+# Build LSTM model
+model = Sequential()
+model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
+model.add(LSTM(units=50))
+model.add(Dense(1))
+
+# Compile model
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Train model
+epochs = 50
+batch_size = 16
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=2)
+
+# Make predictions
+train_pred = model.predict(X_train)
+test_pred = model.predict(X_test)
+
+# Evaluate model performance
+train_mae = mean_absolute_error(y_train, train_pred)
+test_mae = mean_absolute_error(y_test, test_pred)
+train_rmse = np.sqrt(mean_squared_error(y_train, train_pred))
+test_rmse = np.sqrt(mean_squared_error(y_test, test_pred))
+
+print(f'Train MAE: {train_mae:.2f}, Test MAE: {test_mae:.2f}')
+print(f'Train RMSE: {train_rmse:.2f}, Test RMSE: {test_rmse:.2f}')
+
+# Plot predictions
+plt.figure(figsize=(10,6))
+plt.plot(scaler.inverse_transform(train_data[['Production']]), label='Original')
+plt.plot(scaler.inverse_transform(train_pred), label='Predicted')
+plt.title('Training Data')
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10,6))
+plt.plot(scaler.inverse_transform(test_data[['Production']]), label='Original')
+plt.plot(scaler.inverse_transform(test_pred), label='Predicted')
+plt.title('Testing Data')
+plt.legend()
+plt.show()

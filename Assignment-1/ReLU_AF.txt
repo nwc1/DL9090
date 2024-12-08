@@ -1,0 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the ReLU activation function
+def relu_activation(x):
+    return np.maximum(0, x)
+
+# Generate a range of input values
+x = np.linspace(-10, 10, 400)
+
+# Apply the ReLU activation function
+y = relu_activation(x)
+
+plt.plot(x, y, label='ReLU Activation Function', color='m')
+plt.title('ReLU Activation Function')
+plt.xlabel('Input (x)')
+plt.ylabel('Output (f(x))')
+plt.grid(True)
+plt.legend()
+plt.show()

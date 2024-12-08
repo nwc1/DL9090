@@ -1,0 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the linear activation function
+def linear_activation(x):
+    return x
+
+# Generate a range of input values
+x = np.linspace(-10, 10, 400)
+
+# Apply the linear activation function
+y = linear_activation(x)
+
+plt.plot(x, y, label='Linear Activation Function', color='b')
+plt.title('Linear Activation Function')
+plt.xlabel('Input (x)')
+plt.ylabel('Output (f(x))')
+plt.grid(True)
+plt.legend()
+plt.show()

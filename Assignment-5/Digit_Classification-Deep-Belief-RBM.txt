@@ -1,0 +1,94 @@
+from keras.datasets import mnist
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+import numpy as np
+
+# Load the MNIST dataset
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+x_train = x_train.reshape(60000, 784)
+x_test = x_test.reshape(10000, 784)
+
+# Normalize the pixel values to be between 0 and 1
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+
+class RBM:
+    def __init__(self, visible_units, hidden_units):
+        self.visible_units = visible_units
+        self.hidden_units = hidden_units
+        self.weights = np.random.normal(loc=0, scale=0.1, size=(visible_units, hidden_units))
+        self.visible_bias = np.zeros((visible_units,))
+        self.hidden_bias = np.zeros((hidden_units,))
+
+    def sigmoid(self, x):
+        return 0.5 * (1 + np.tanh(x / 2))
+
+    def train(self, data, epochs=100, learning_rate=0.1):
+        for _ in range(epochs):
+            hidden_probs = self.sigmoid(np.dot(data, self.weights) + self.hidden_bias)
+            visible_reconstructed = self.sigmoid(np.dot(hidden_probs, self.weights.T) + self.visible_bias)
+            self.weights += learning_rate * (np.dot(data.T, hidden_probs) - np.dot(visible_reconstructed.T, hidden_probs))
+            self.visible_bias += learning_rate * (np.sum(data - visible_reconstructed, axis=0))
+            self.hidden_bias += learning_rate * (np.sum(hidden_probs, axis=0))
+
+    def get_hidden(self, data):
+        return self.sigmoid(np.dot(data, self.weights) + self.hidden_bias)
+
+class DBN:
+    def __init__(self, rbm_layers):
+        self.rbm_layers = rbm_layers
+
+    def train(self, data):
+        for i, rbm in enumerate(self.rbm_layers):
+            if i == 0:
+                rbm.train(data)
+            else:
+                rbm.train(self.rbm_layers[i-1].get_hidden(data))
+
+    def get_features(self, data):
+        for rbm in self.rbm_layers:
+            data = rbm.get_hidden(data)
+        return data
+
+    def evaluate(self, data, labels):
+        features = self.get_features(data)
+        # Train logistic regression classifier
+        classifier = Sequential()
+        classifier.add(Dense(10, activation='softmax', input_dim=self.rbm_layers[-1].hidden_units))
+        classifier.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        classifier.fit(features, labels, epochs=10, batch_size=128)
+        loss, accuracy = classifier.evaluate(features, labels)
+        return accuracy
+
+rbm_layers = [
+    RBM(784, 200),
+    RBM(200, 50)
+]
+dbn = DBN(rbm_layers)
+dbn = DBN(rbm_layers)
+
+dbn.train(x_train)
+dbn_score = dbn.evaluate(x_test, y_test)
+print("DBN Score:", dbn_score)
+
+features = dbn.get_features(x_train)
+classifier = Sequential()
+classifier.add(Dense(10, activation='softmax', input_dim=rbm_layers[-1].hidden_units))
+classifier.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+classifier.fit(features, y_train, epochs=10, batch_size=128)
+
+# Evaluate classifier
+loss, accuracy = classifier.evaluate(dbn.get_features(x_test), y_test)
+print("Classification Accuracy:", accuracy)
+
+import matplotlib.pyplot as plt
+
+plt.bar(range(10), [np.sum(y_test == i) for i in range(10)], alpha=0.5, label='Actual Classes',color='blue')
+predicted_classes = np.argmax(classifier.predict(dbn.get_features(x_test)), axis=1)
+plt.bar(range(10), [np.sum(predicted_classes == i) for i in range(10)], label='Predicted Classes',color='darkblue')
+plt.xlabel('Class')
+plt.ylabel('Frequency')
+plt.title('Classification Accuracy')
+plt.legend()
+plt.show()

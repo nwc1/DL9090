@@ -1,0 +1,50 @@
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+# Sample text data (list of sentences)
+texts = [
+    "I love natural language processing",
+    "LSTM models are very powerful for sequential data",
+    "Embedding layers map words to vectors",
+    "Text data requires tokenization before training models",
+]
+
+# Parameters
+vocab_size = 10000  # Size of the vocabulary (number of unique tokens)
+embedding_dim = 64  # Embedding output dimension
+sequence_length = 10  # Maximum length of input sequences
+lstm_units = 128  # Number of LSTM units
+
+# Tokenize the text data
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
+tokenizer.fit_on_texts(texts)
+
+# Convert text to sequences of integers
+sequences = tokenizer.texts_to_sequences(texts)
+
+# Pad the sequences to ensure uniform input length
+padded_sequences = pad_sequences(sequences, maxlen=sequence_length, padding='post')
+
+# Define the Sequential model
+model = Sequential()
+
+# Add Embedding layer to map integer sequences to 64-dimensional vectors
+model.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=sequence_length))
+
+# Add LSTM layer to process the embedded sequences
+model.add(LSTM(lstm_units))
+
+# Add a Dense layer for output (this can be modified as per the problem, e.g., classification or regression)
+model.add(Dense(1, activation='sigmoid'))  # For binary classification
+
+# Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Pass the padded sequences to the model for building it
+model.build(input_shape=(None, sequence_length))
+
+# Model summary
+model.summary()

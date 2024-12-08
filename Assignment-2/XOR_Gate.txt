@@ -1,0 +1,35 @@
+#Q1 - XOR
+def step_function(z, threshold):
+    if z>threshold:
+        return 1
+    else:
+        return 0
+
+weights1 = [[-1, 1], [-1, 1]]
+weights2 = [[1, -1]]
+bias1 = [0.5, -0.5]
+bias2 = [0.5]
+threshold = 1
+
+X = [[0, 0], [0, 1], [1, 0], [1, 1]]
+y = [[0], [1], [1], [0]]
+
+
+for i in range(len(X)):
+    print(f"\nRow {i+1}:")
+    print(f"Input: {X[i]}")
+
+    n1_weighted_sum = X[i][0]*weights1[0][0] + X[i][1]*weights1[0][1] + bias1[0]
+    n2_weighted_sum = X[i][0]*weights1[1][0] + X[i][1]*weights1[1][1] + bias1[1]
+
+    n1 = step_function(n1_weighted_sum, threshold)
+    n2 = step_function(n2_weighted_sum, threshold)
+    print(f"N1-Output:{n1}" +" & " f"N2-Output:{n2}")
+
+    o1_weighted_sum = n1*weights2[0][0] + n2*weights2[0][1] + bias2[0]
+    print(f"Weighted Sum: {o1_weighted_sum}")
+    o1 = step_function(o1_weighted_sum, threshold)
+
+    print(f"Actual Output: {o1}")
+    print(f"Expected Output: {y[i][0]}")
+    

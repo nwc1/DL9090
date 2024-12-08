@@ -1,0 +1,21 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the ELU function
+def elu(x, alpha=1.0):
+    return np.where(x > 0, x, alpha * (np.exp(x) - 1))
+
+# Generate a range of values for x
+x = np.linspace(-3, 3, 400)
+alpha = 1.0  # You can change this value to see how it affects the ELU function
+
+# Compute the ELU values
+y = elu(x, alpha)
+
+plt.plot(x, y, label=f'ELU Function (α={alpha})', color='blue')
+plt.title('Exponential Linear Unit (ELU) Activation Function')
+plt.xlabel('x')
+plt.ylabel('ELU(x)')
+plt.grid(True)
+plt.legend()
+plt.show()

@@ -1,0 +1,21 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the tanh activation function
+def tanh_activation(x):
+    return np.tanh(x)
+
+# Generate a range of input values
+x = np.linspace(-10, 10, 400)
+
+# Apply the tanh activation function
+y = tanh_activation(x)
+
+# Plot the results
+plt.plot(x, y, label='Tanh Activation Function', color='g')
+plt.title('Tanh Activation Function')
+plt.xlabel('Input (x)')
+plt.ylabel('Output (f(x))')
+plt.grid(True)
+plt.legend()
+plt.show()

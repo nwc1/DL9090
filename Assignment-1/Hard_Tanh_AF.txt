@@ -1,0 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the Hard Tanh activation function
+def hard_tanh(x):
+    return np.clip(x, -1, 1)
+
+# Generate a range of input values
+x = np.linspace(-3, 3, 400)
+
+# Apply the Hard Tanh activation function
+y = hard_tanh(x)
+
+plt.plot(x, y, label='Hard Tanh Activation Function', color='m')
+plt.title('Hard Tanh Activation Function')
+plt.xlabel('Input (x)')
+plt.ylabel('Output (f(x))')
+plt.grid(True)
+plt.legend()
+plt.show()
