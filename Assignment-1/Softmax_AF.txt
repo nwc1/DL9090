@@ -7,15 +7,15 @@ def softmax_activation(x):
     return e_x / e_x.sum(axis=0)
 
 # Generate a range of input values
-x = np.linspace(-2, 2, 100)
+x = np.linspace(-5, 5, 200)
 # Create a matrix where each row is a different input vector for softmax
 X = np.vstack([x, np.zeros_like(x), np.zeros_like(x)])  # Adding 3 different "classes" for visualization
 
 # Apply the softmax activation function
 y = softmax_activation(X)
 
-plt.plot(x, y[0, :], label='Class 1', color='r')
-plt.plot(x, y[1, :], label='Class 2', color='g')
+plt.plot(x, y[0, :], color='r')
+
 
 plt.title('Softmax Activation Function')
 plt.xlabel('Input (x)')
